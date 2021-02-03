@@ -12,10 +12,12 @@ let uuid = ""
 const Socket = () => {
 
     term.onKey((key) => {
-        console.log(inputValue)
+
         //ESC key 입력
         if (key.domEvent.code === "Backspace") {
             inputValue.pop()
+            console.log(inputValue)
+            term.write("\b \b")
         }
         else if (key.domEvent.code === "Enter") {
             ws.send(JSON.stringify({
@@ -38,6 +40,7 @@ const Socket = () => {
         }else{
             term.write(key.key)
             inputValue.push(key.key)
+            console.log(inputValue)
             // ws.send(JSON.stringify({
             //     "requestType" : "Message",
             //     "uuid" : uuid,
