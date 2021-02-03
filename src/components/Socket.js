@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect} from 'react';
 import {Terminal} from 'xterm'
 import 'xterm/css/xterm.css'
 
@@ -6,31 +6,43 @@ const term = new Terminal({
     cursorBlink: true
 })
 const ws = new WebSocket("ws://211.253.10.9:8080/ws/sftp")
+const inputValue = []
+let uuid = ""
 
 const Socket = () => {
-    const [uuid, setUuid] = useState("");
 
     term.onKey((key) => {
-        let value = key.domEvent.key
-        console.log(value)
-        // ws.send(JSON.stringify({
-        //     "requestType" : "Command",
-        //     "uuid" : uuid,
-        //     "message" : "ls /home"
-        //
-        // }))
+        console.log(inputValue)
         //ESC key 입력
-        if (value !== "Backspace") {
-            term.write(value)
+        if (key.domEvent.code === "Backspace") {
+            inputValue.pop()
         }
-        if (value === "Escape") { //sftp 연결종료
+        else if (key.domEvent.code === "Enter") {
+            ws.send(JSON.stringify({
+                "requestType" : "Command",
+                "uuid" : uuid,
+                "message" : inputValue.join("")
+            }))
+            ws.onmessage = (e) => {
+                console.log(e.data)
+            }
+        }
+        else if (key.domEvent.code === "Escape") { //sftp 연결종료
+            ws.send(JSON.stringify({
+                "requestType": "Disconnect",
+                "uuid": uuid
+            }))
+            ws.onmessage = (e) => {
+                console.log(e.data)
+            }
+        }else{
+            term.write(key.key)
+            inputValue.push(key.key)
             // ws.send(JSON.stringify({
-            //     "requestType": "Disconnect",
-            //     "uuid": "635e45c7-d7ac-474f-ba41-85d4ca55d12f"
+            //     "requestType" : "Message",
+            //     "uuid" : uuid,
+            //     "message" : key.key
             // }))
-            // ws.onmessage = (e) => {
-            //     console.log(e.data)
-            // }
         }
 
     })
@@ -53,11 +65,9 @@ const Socket = () => {
                 "port": 10021
             }))
         }
-        console.log(ws.readyState)
         ws.onmessage = (e) => {
             const data = JSON.parse(e.data)
-            console.log(data.uuid)
-            // setUuid(JSON.parse(e.data.uuid))
+            uuid = data.uuid
         }
         // ws.onclose = function (e) {
         //     if (e.wasClean) {
